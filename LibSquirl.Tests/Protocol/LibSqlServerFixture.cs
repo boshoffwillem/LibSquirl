@@ -4,10 +4,9 @@ namespace LibSquirl.Tests.Protocol;
 
 public sealed class LibSqlServerFixture : IAsyncLifetime
 {
+    private const string BaseUrl = "http://localhost:8080";
     public ILibSqlClient Client { get; private set; } = null!;
     public HttpClient HttpClient { get; private set; } = null!;
-
-    private const string BaseUrl = "http://localhost:8080";
 
     public async Task InitializeAsync()
     {
@@ -31,12 +30,14 @@ public sealed class LibSqlServerFixture : IAsyncLifetime
             {
                 // Server not ready yet
             }
+
             await Task.Delay(1000);
             retries--;
         }
 
         throw new InvalidOperationException(
-            "libsql-server did not become healthy. Run 'docker compose up -d' first.");
+            "libsql-server did not become healthy. Run 'docker compose up -d' first."
+        );
     }
 
     public Task DisposeAsync()

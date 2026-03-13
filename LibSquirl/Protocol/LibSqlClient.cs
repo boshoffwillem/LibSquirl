@@ -1,20 +1,21 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-
+using System.Text.Json.Serialization;
 using LibSquirl.Protocol.Models;
 
 namespace LibSquirl.Protocol;
 
 public sealed class LibSqlClient : ILibSqlClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly LibSqlClientOptions _options;
-
     private static readonly JsonSerializerOptions s_jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    private readonly HttpClient _httpClient;
+    private readonly LibSqlClientOptions _options;
 
     public LibSqlClient(HttpClient httpClient, LibSqlClientOptions options)
     {
@@ -26,8 +27,10 @@ public sealed class LibSqlClient : ILibSqlClient
 
         if (!string.IsNullOrEmpty(options.AuthToken))
         {
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", options.AuthToken);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                "Bearer",
+                options.AuthToken
+            );
         }
     }
 
@@ -35,7 +38,8 @@ public sealed class LibSqlClient : ILibSqlClient
         string sql,
         IReadOnlyList<Value>? args = null,
         IReadOnlyList<NamedArg>? namedArgs = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         Statement stmt = new() { Sql = sql };
 
@@ -51,11 +55,7 @@ public sealed class LibSqlClient : ILibSqlClient
 
         PipelineRequest request = new()
         {
-            Requests =
-            [
-                StreamRequest.Execute(stmt),
-                StreamRequest.Close()
-            ]
+            Requests = [StreamRequest.Execute(stmt), StreamRequest.Close()],
         };
 
         PipelineResponse response = await PipelineAsync(request, cancellationToken);
@@ -71,15 +71,12 @@ public sealed class LibSqlClient : ILibSqlClient
 
     public async Task<BatchResult> BatchAsync(
         Batch batch,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         PipelineRequest request = new()
         {
-            Requests =
-            [
-                StreamRequest.ExecuteBatch(batch),
-                StreamRequest.Close()
-            ]
+            Requests = [StreamRequest.ExecuteBatch(batch), StreamRequest.Close()],
         };
 
         PipelineResponse response = await PipelineAsync(request, cancellationToken);
@@ -93,17 +90,11 @@ public sealed class LibSqlClient : ILibSqlClient
         return ((BatchStreamResponse)batchResult.Response!).Result;
     }
 
-    public async Task SequenceAsync(
-        string sql,
-        CancellationToken cancellationToken = default)
+    public async Task SequenceAsync(string sql, CancellationToken cancellationToken = default)
     {
         PipelineRequest request = new()
         {
-            Requests =
-            [
-                StreamRequest.Sequence(sql: sql),
-                StreamRequest.Close()
-            ]
+            Requests = [StreamRequest.Sequence(sql), StreamRequest.Close()],
         };
 
         PipelineResponse response = await PipelineAsync(request, cancellationToken);
@@ -117,15 +108,12 @@ public sealed class LibSqlClient : ILibSqlClient
 
     public async Task<DescribeResult> DescribeAsync(
         string sql,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         PipelineRequest request = new()
         {
-            Requests =
-            [
-                StreamRequest.Describe(sql: sql),
-                StreamRequest.Close()
-            ]
+            Requests = [StreamRequest.Describe(sql), StreamRequest.Close()],
         };
 
         PipelineResponse response = await PipelineAsync(request, cancellationToken);
@@ -141,20 +129,28 @@ public sealed class LibSqlClient : ILibSqlClient
 
     public async Task<PipelineResponse> PipelineAsync(
         PipelineRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         using HttpResponseMessage httpResponse = await _httpClient.PostAsJsonAsync(
-            "/v2/pipeline", request, s_jsonOptions, cancellationToken);
+            "/v2/pipeline",
+            request,
+            s_jsonOptions,
+            cancellationToken
+        );
 
         if (!httpResponse.IsSuccessStatusCode)
         {
             string body = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
             throw new LibSqlException(
-                $"Pipeline request failed with status {httpResponse.StatusCode}: {body}");
+                $"Pipeline request failed with status {httpResponse.StatusCode}: {body}"
+            );
         }
 
         PipelineResponse? response = await httpResponse.Content.ReadFromJsonAsync<PipelineResponse>(
-            s_jsonOptions, cancellationToken);
+            s_jsonOptions,
+            cancellationToken
+        );
 
         return response ?? throw new LibSqlException("Received null pipeline response");
     }
@@ -163,7 +159,10 @@ public sealed class LibSqlClient : ILibSqlClient
     {
         try
         {
-            using HttpResponseMessage response = await _httpClient.GetAsync("/health", cancellationToken);
+            using HttpResponseMessage response = await _httpClient.GetAsync(
+                "/health",
+                cancellationToken
+            );
             return response.IsSuccessStatusCode;
         }
         catch
@@ -174,7 +173,10 @@ public sealed class LibSqlClient : ILibSqlClient
 
     public async Task<string> GetVersionAsync(CancellationToken cancellationToken = default)
     {
-        using HttpResponseMessage response = await _httpClient.GetAsync("/version", cancellationToken);
+        using HttpResponseMessage response = await _httpClient.GetAsync(
+            "/version",
+            cancellationToken
+        );
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
@@ -186,18 +188,29 @@ public sealed class LibSqlClient : ILibSqlClient
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
-    public async Task<MigrationJobsSummary> ListMigrationJobsAsync(CancellationToken cancellationToken = default)
+    public async Task<MigrationJobsSummary> ListMigrationJobsAsync(
+        CancellationToken cancellationToken = default
+    )
     {
-        using HttpResponseMessage response = await _httpClient.GetAsync("/v1/jobs", cancellationToken);
+        using HttpResponseMessage response = await _httpClient.GetAsync(
+            "/v1/jobs",
+            cancellationToken
+        );
         response.EnsureSuccessStatusCode();
         string json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<MigrationJobsSummary>(json, s_jsonOptions)
             ?? throw new LibSqlException("Failed to deserialize migration jobs response");
     }
 
-    public async Task<MigrationJobDetail> GetMigrationJobAsync(int jobId, CancellationToken cancellationToken = default)
+    public async Task<MigrationJobDetail> GetMigrationJobAsync(
+        int jobId,
+        CancellationToken cancellationToken = default
+    )
     {
-        using HttpResponseMessage response = await _httpClient.GetAsync($"/v1/jobs/{jobId}", cancellationToken);
+        using HttpResponseMessage response = await _httpClient.GetAsync(
+            $"/v1/jobs/{jobId}",
+            cancellationToken
+        );
         response.EnsureSuccessStatusCode();
         string json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<MigrationJobDetail>(json, s_jsonOptions)

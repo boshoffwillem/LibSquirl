@@ -1,18 +1,19 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LibSquirl.Platform;
 
 public abstract class PlatformApiBase
 {
-    protected readonly HttpClient HttpClient;
-    protected readonly TursoPlatformOptions Options;
-
     protected static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    protected readonly HttpClient HttpClient;
+    protected readonly TursoPlatformOptions Options;
 
     protected PlatformApiBase(HttpClient httpClient, TursoPlatformOptions options)
     {

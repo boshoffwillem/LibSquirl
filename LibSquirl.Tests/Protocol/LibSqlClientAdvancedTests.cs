@@ -15,12 +15,14 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
         try
         {
             await _client.SequenceAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT); " +
-                $"INSERT INTO {tableName} (val) VALUES ('a'); " +
-                $"INSERT INTO {tableName} (val) VALUES ('b');");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT); "
+                    + $"INSERT INTO {tableName} (val) VALUES ('a'); "
+                    + $"INSERT INTO {tableName} (val) VALUES ('b');"
+            );
 
             StatementResult result = await _client.ExecuteAsync(
-                $"SELECT COUNT(*) FROM {tableName}");
+                $"SELECT COUNT(*) FROM {tableName}"
+            );
             Assert.Equal(2L, ((IntegerValue)result.Rows[0][0]).Val);
         }
         finally
@@ -32,8 +34,9 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
     [Fact]
     public async Task SequenceAsync_InvalidSql_ThrowsException()
     {
-        await Assert.ThrowsAsync<LibSqlException>(
-            () => _client.SequenceAsync("INVALID SQL STATEMENT;"));
+        await Assert.ThrowsAsync<LibSqlException>(() =>
+            _client.SequenceAsync("INVALID SQL STATEMENT;")
+        );
     }
 
     [Fact]
@@ -43,10 +46,12 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"
+            );
 
             DescribeResult result = await _client.DescribeAsync(
-                $"SELECT id, name, age FROM {tableName} WHERE age > ?");
+                $"SELECT id, name, age FROM {tableName} WHERE age > ?"
+            );
 
             Assert.True(result.IsReadonly);
             Assert.False(result.IsExplain);
@@ -69,10 +74,12 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)"
+            );
 
             DescribeResult result = await _client.DescribeAsync(
-                $"INSERT INTO {tableName} (val) VALUES (?)");
+                $"INSERT INTO {tableName} (val) VALUES (?)"
+            );
 
             Assert.False(result.IsReadonly);
         }
@@ -89,7 +96,8 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)"
+            );
 
             // Store SQL, then execute using sql_id, then close sql
             PipelineRequest request = new()
@@ -99,8 +107,8 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
                     StreamRequest.StoreSql(1, $"INSERT INTO {tableName} (val) VALUES ('stored')"),
                     StreamRequest.Execute(new Statement { SqlId = 1 }),
                     StreamRequest.CloseSql(1),
-                    StreamRequest.Close()
-                ]
+                    StreamRequest.Close(),
+                ],
             };
 
             PipelineResponse response = await _client.PipelineAsync(request);
@@ -110,7 +118,8 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
             Assert.True(response.Results[1].IsOk);
 
             StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT val FROM {tableName}");
+                $"SELECT val FROM {tableName}"
+            );
             Assert.Equal("stored", ((TextValue)selectResult.Rows[0][0]).Val);
         }
         finally
@@ -126,7 +135,8 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)"
+            );
 
             // First pipeline: BEGIN transaction (no close, so we get a baton)
             PipelineRequest beginRequest = new()
@@ -134,8 +144,10 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
                 Requests =
                 [
                     StreamRequest.Execute(new Statement { Sql = "BEGIN" }),
-                    StreamRequest.Execute(new Statement { Sql = $"INSERT INTO {tableName} (val) VALUES ('in-tx')" }),
-                ]
+                    StreamRequest.Execute(
+                        new Statement { Sql = $"INSERT INTO {tableName} (val) VALUES ('in-tx')" }
+                    ),
+                ],
             };
 
             PipelineResponse beginResponse = await _client.PipelineAsync(beginRequest);
@@ -150,15 +162,14 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
                 Requests =
                 [
                     StreamRequest.Execute(new Statement { Sql = "COMMIT" }),
-                    StreamRequest.Close()
-                ]
+                    StreamRequest.Close(),
+                ],
             };
 
             PipelineResponse commitResponse = await _client.PipelineAsync(commitRequest);
             Assert.True(commitResponse.Results[0].IsOk);
 
-            StatementResult result = await _client.ExecuteAsync(
-                $"SELECT val FROM {tableName}");
+            StatementResult result = await _client.ExecuteAsync($"SELECT val FROM {tableName}");
             Assert.Single(result.Rows);
             Assert.Equal("in-tx", ((TextValue)result.Rows[0][0]).Val);
         }
@@ -209,16 +220,18 @@ public class LibSqlClientAdvancedTests(LibSqlServerFixture fixture)
         string tableName = $"test_fields_{Guid.NewGuid():N}";
         try
         {
-            await _client.ExecuteAsync($"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)");
+            await _client.ExecuteAsync(
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)"
+            );
 
             StatementResult insertResult = await _client.ExecuteAsync(
-                $"INSERT INTO {tableName} (val) VALUES ('test')");
+                $"INSERT INTO {tableName} (val) VALUES ('test')"
+            );
 
             Assert.Equal(1, insertResult.AffectedRowCount);
             Assert.True(long.Parse(insertResult.LastInsertRowId!) > 0);
 
-            StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT * FROM {tableName}");
+            StatementResult selectResult = await _client.ExecuteAsync($"SELECT * FROM {tableName}");
 
             Assert.Single(selectResult.Rows);
             Assert.Equal(2, selectResult.Cols.Count);

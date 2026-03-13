@@ -4,8 +4,6 @@ namespace LibSquirl.Protocol;
 
 public class LibSqlException : Exception
 {
-    public LibSqlError? LibSqlError { get; }
-
     public LibSqlException(string message) : base(message) { }
 
     public LibSqlException(string message, Exception innerException) : base(message, innerException) { }
@@ -14,4 +12,6 @@ public class LibSqlException : Exception
     {
         LibSqlError = error;
     }
+
+    public LibSqlError? LibSqlError { get; }
 }

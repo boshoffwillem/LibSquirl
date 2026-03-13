@@ -18,11 +18,32 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
             {
                 Steps =
                 [
-                    new BatchStep { Stmt = new Statement { Sql = $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)" } },
-                    new BatchStep { Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES ('a')" } },
-                    new BatchStep { Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES ('b')" } },
-                    new BatchStep { Stmt = new Statement { Sql = $"SELECT COUNT(*) FROM {tableName}" } },
-                ]
+                    new BatchStep
+                    {
+                        Stmt = new Statement
+                        {
+                            Sql = $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)",
+                        },
+                    },
+                    new BatchStep
+                    {
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES ('a')",
+                        },
+                    },
+                    new BatchStep
+                    {
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES ('b')",
+                        },
+                    },
+                    new BatchStep
+                    {
+                        Stmt = new Statement { Sql = $"SELECT COUNT(*) FROM {tableName}" },
+                    },
+                ],
             };
 
             BatchResult result = await _client.BatchAsync(batch);
@@ -52,19 +73,25 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
                 [
                     new BatchStep
                     {
-                        Stmt = new Statement { Sql = $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)" }
+                        Stmt = new Statement
+                        {
+                            Sql = $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)",
+                        },
                     },
                     new BatchStep
                     {
                         Condition = BatchCondition.Ok(0),
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES ('conditional')" }
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES ('conditional')",
+                        },
                     },
                     new BatchStep
                     {
                         Condition = BatchCondition.Ok(1),
-                        Stmt = new Statement { Sql = $"SELECT * FROM {tableName}" }
+                        Stmt = new Statement { Sql = $"SELECT * FROM {tableName}" },
                     },
-                ]
+                ],
             };
 
             BatchResult result = await _client.BatchAsync(batch);
@@ -87,7 +114,8 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT NOT NULL)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT NOT NULL)"
+            );
 
             Batch batch = new()
             {
@@ -96,21 +124,30 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
                     // This should fail (NULL into NOT NULL column)
                     new BatchStep
                     {
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES (NULL)" }
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES (NULL)",
+                        },
                     },
                     // This should run because step 0 errored
                     new BatchStep
                     {
                         Condition = BatchCondition.Error(0),
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES ('fallback')" }
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES ('fallback')",
+                        },
                     },
                     // This should NOT run because step 0 didn't succeed
                     new BatchStep
                     {
                         Condition = BatchCondition.Ok(0),
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES ('should-not-exist')" }
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES ('should-not-exist')",
+                        },
                     },
-                ]
+                ],
             };
 
             BatchResult result = await _client.BatchAsync(batch);
@@ -120,7 +157,8 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
             Assert.Null(result.StepResults[2]); // Skipped
 
             StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT name FROM {tableName}");
+                $"SELECT name FROM {tableName}"
+            );
             Assert.Single(selectResult.Rows);
             Assert.Equal("fallback", ((TextValue)selectResult.Rows[0][0]).Val);
         }
@@ -137,7 +175,8 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)"
+            );
 
             Batch batch = new()
             {
@@ -146,15 +185,21 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
                     // This succeeds
                     new BatchStep
                     {
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES ('first')" }
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES ('first')",
+                        },
                     },
                     // NOT ok(0) -> false, so this should be skipped
                     new BatchStep
                     {
                         Condition = BatchCondition.Not(BatchCondition.Ok(0)),
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (name) VALUES ('should-skip')" }
+                        Stmt = new Statement
+                        {
+                            Sql = $"INSERT INTO {tableName} (name) VALUES ('should-skip')",
+                        },
                     },
-                ]
+                ],
             };
 
             BatchResult result = await _client.BatchAsync(batch);
@@ -162,7 +207,8 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
             Assert.Null(result.StepResults[1]); // Skipped
 
             StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT name FROM {tableName}");
+                $"SELECT name FROM {tableName}"
+            );
             Assert.Single(selectResult.Rows);
         }
         finally
@@ -178,7 +224,8 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val INTEGER)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val INTEGER)"
+            );
 
             Batch batch = new()
             {
@@ -188,32 +235,33 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
                     new BatchStep
                     {
                         Condition = BatchCondition.Ok(0),
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (val) VALUES (1)" }
+                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (val) VALUES (1)" },
                     },
                     new BatchStep
                     {
                         Condition = BatchCondition.Ok(1),
-                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (val) VALUES (2)" }
+                        Stmt = new Statement { Sql = $"INSERT INTO {tableName} (val) VALUES (2)" },
                     },
                     new BatchStep
                     {
                         Condition = BatchCondition.Ok(2),
-                        Stmt = new Statement { Sql = "COMMIT" }
+                        Stmt = new Statement { Sql = "COMMIT" },
                     },
                     // Rollback if anything failed
                     new BatchStep
                     {
                         Condition = BatchCondition.Not(BatchCondition.Ok(2)),
-                        Stmt = new Statement { Sql = "ROLLBACK" }
+                        Stmt = new Statement { Sql = "ROLLBACK" },
                     },
-                ]
+                ],
             };
 
             BatchResult result = await _client.BatchAsync(batch);
             Assert.All(result.StepErrors.Take(4), error => Assert.Null(error));
 
             StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT COUNT(*) FROM {tableName}");
+                $"SELECT COUNT(*) FROM {tableName}"
+            );
             Assert.Equal(2L, ((IntegerValue)selectResult.Rows[0][0]).Val);
         }
         finally
@@ -229,7 +277,8 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
         try
         {
             await _client.ExecuteAsync(
-                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)");
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)"
+            );
 
             Batch batch = new()
             {
@@ -240,17 +289,18 @@ public class LibSqlClientBatchTests(LibSqlServerFixture fixture)
                         Stmt = new Statement
                         {
                             Sql = $"INSERT INTO {tableName} (name) VALUES (?)",
-                            Args = [Value.Text("from-batch")]
-                        }
+                            Args = [Value.Text("from-batch")],
+                        },
                     },
-                ]
+                ],
             };
 
             BatchResult result = await _client.BatchAsync(batch);
             Assert.Null(result.StepErrors[0]);
 
             StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT name FROM {tableName}");
+                $"SELECT name FROM {tableName}"
+            );
             Assert.Equal("from-batch", ((TextValue)selectResult.Rows[0][0]).Val);
         }
         finally

@@ -1,5 +1,4 @@
 using System.Net;
-
 using LibSquirl.Platform;
 using LibSquirl.Platform.Models;
 using LibSquirl.Platform.Tokens;
@@ -15,7 +14,7 @@ public class ApiTokensApiTests
         TursoPlatformOptions options = new()
         {
             ApiToken = "test-token",
-            OrganizationSlug = "test-org"
+            OrganizationSlug = "test-org",
         };
         return (new ApiTokensApi(httpClient, options), handler);
     }
@@ -24,9 +23,12 @@ public class ApiTokensApiTests
     public async Task ListAsync_SendsCorrectRequest()
     {
         (ApiTokensApi api, MockHttpMessageHandler handler) = CreateApi();
-        handler.EnqueueResponse(HttpStatusCode.OK, """
-            {"tokens":[{"name":"my-token","id":"tok-123"}]}
-        """);
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """
+                {"tokens":[{"name":"my-token","id":"tok-123"}]}
+            """
+        );
 
         List<ApiToken> result = await api.ListAsync();
 
@@ -42,9 +44,12 @@ public class ApiTokensApiTests
     public async Task CreateAsync_SendsCorrectRequest()
     {
         (ApiTokensApi api, MockHttpMessageHandler handler) = CreateApi();
-        handler.EnqueueResponse(HttpStatusCode.OK, """
-            {"name":"new-token","id":"tok-456","token":"jwt-value"}
-        """);
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """
+                {"name":"new-token","id":"tok-456","token":"jwt-value"}
+            """
+        );
 
         ApiToken result = await api.CreateAsync("new-token");
 
@@ -85,8 +90,9 @@ public class ApiTokensApiTests
         (ApiTokensApi api, MockHttpMessageHandler handler) = CreateApi();
         handler.EnqueueResponse(HttpStatusCode.Unauthorized, """{"error":"invalid token"}""");
 
-        TursoPlatformException ex = await Assert.ThrowsAsync<TursoPlatformException>(
-            () => api.ValidateAsync());
+        TursoPlatformException ex = await Assert.ThrowsAsync<TursoPlatformException>(() =>
+            api.ValidateAsync()
+        );
         Assert.Equal(401, ex.StatusCode);
     }
 }

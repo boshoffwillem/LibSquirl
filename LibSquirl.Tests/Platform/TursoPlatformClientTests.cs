@@ -1,5 +1,3 @@
-using System.Net;
-
 using LibSquirl.Platform;
 using LibSquirl.Platform.AuditLogs;
 using LibSquirl.Platform.Databases;
@@ -20,7 +18,7 @@ public class TursoPlatformClientTests
         TursoPlatformOptions options = new()
         {
             ApiToken = "test-token",
-            OrganizationSlug = "test-org"
+            OrganizationSlug = "test-org",
         };
 
         TursoPlatformClient client = new(httpClient, options);
@@ -49,7 +47,7 @@ public class TursoPlatformClientTests
         {
             ApiToken = "test-token",
             OrganizationSlug = "test-org",
-            BaseUrl = "https://custom-api.example.com"
+            BaseUrl = "https://custom-api.example.com",
         };
 
         _ = new TursoPlatformClient(httpClient, options);
@@ -65,7 +63,7 @@ public class TursoPlatformClientTests
         TursoPlatformOptions options = new()
         {
             ApiToken = "my-secret-token",
-            OrganizationSlug = "test-org"
+            OrganizationSlug = "test-org",
         };
 
         _ = new TursoPlatformClient(httpClient, options);

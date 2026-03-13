@@ -8,11 +8,30 @@ public abstract record BatchCondition
 {
     public abstract string Type { get; }
 
-    public static BatchCondition Ok(int step) => new OkCondition(step);
-    public static BatchCondition Error(int step) => new ErrorCondition(step);
-    public static BatchCondition Not(BatchCondition cond) => new NotCondition(cond);
-    public static BatchCondition And(params BatchCondition[] conds) => new AndCondition([.. conds]);
-    public static BatchCondition Or(params BatchCondition[] conds) => new OrCondition([.. conds]);
+    public static BatchCondition Ok(int step)
+    {
+        return new OkCondition(step);
+    }
+
+    public static BatchCondition Error(int step)
+    {
+        return new ErrorCondition(step);
+    }
+
+    public static BatchCondition Not(BatchCondition cond)
+    {
+        return new NotCondition(cond);
+    }
+
+    public static BatchCondition And(params BatchCondition[] conds)
+    {
+        return new AndCondition([.. conds]);
+    }
+
+    public static BatchCondition Or(params BatchCondition[] conds)
+    {
+        return new OrCondition([.. conds]);
+    }
 }
 
 public sealed record OkCondition(int Step) : BatchCondition
@@ -42,7 +61,11 @@ public sealed record OrCondition(List<BatchCondition> Conds) : BatchCondition
 
 internal sealed class BatchConditionConverter : JsonConverter<BatchCondition>
 {
-    public override BatchCondition Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override BatchCondition Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    )
     {
         using JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement root = doc.RootElement;
@@ -53,16 +76,32 @@ internal sealed class BatchConditionConverter : JsonConverter<BatchCondition>
             "ok" => new OkCondition(root.GetProperty("step").GetInt32()),
             "error" => new ErrorCondition(root.GetProperty("step").GetInt32()),
             "not" => new NotCondition(
-                JsonSerializer.Deserialize<BatchCondition>(root.GetProperty("cond").GetRawText(), options)!),
+                JsonSerializer.Deserialize<BatchCondition>(
+                    root.GetProperty("cond").GetRawText(),
+                    options
+                )!
+            ),
             "and" => new AndCondition(
-                JsonSerializer.Deserialize<List<BatchCondition>>(root.GetProperty("conds").GetRawText(), options)!),
+                JsonSerializer.Deserialize<List<BatchCondition>>(
+                    root.GetProperty("conds").GetRawText(),
+                    options
+                )!
+            ),
             "or" => new OrCondition(
-                JsonSerializer.Deserialize<List<BatchCondition>>(root.GetProperty("conds").GetRawText(), options)!),
-            _ => throw new JsonException($"Unknown batch condition type: {type}")
+                JsonSerializer.Deserialize<List<BatchCondition>>(
+                    root.GetProperty("conds").GetRawText(),
+                    options
+                )!
+            ),
+            _ => throw new JsonException($"Unknown batch condition type: {type}"),
         };
     }
 
-    public override void Write(Utf8JsonWriter writer, BatchCondition value, JsonSerializerOptions options)
+    public override void Write(
+        Utf8JsonWriter writer,
+        BatchCondition value,
+        JsonSerializerOptions options
+    )
     {
         writer.WriteStartObject();
         writer.WriteString("type", value.Type);

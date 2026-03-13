@@ -8,21 +8,40 @@ public abstract class StreamRequest
 {
     public abstract string Type { get; }
 
-    public static StreamRequest Execute(Statement stmt) => new ExecuteStreamRequest { Stmt = stmt };
-    public static StreamRequest Close() => new CloseStreamRequest();
-    public static StreamRequest ExecuteBatch(Batch batch) => new BatchStreamRequest { Batch = batch };
+    public static StreamRequest Execute(Statement stmt)
+    {
+        return new ExecuteStreamRequest { Stmt = stmt };
+    }
 
-    public static StreamRequest Sequence(string? sql = null, int? sqlId = null) =>
-        new SequenceStreamRequest { Sql = sql, SqlId = sqlId };
+    public static StreamRequest Close()
+    {
+        return new CloseStreamRequest();
+    }
 
-    public static StreamRequest Describe(string? sql = null, int? sqlId = null) =>
-        new DescribeStreamRequest { Sql = sql, SqlId = sqlId };
+    public static StreamRequest ExecuteBatch(Batch batch)
+    {
+        return new BatchStreamRequest { Batch = batch };
+    }
 
-    public static StreamRequest StoreSql(int sqlId, string sql) =>
-        new StoreSqlStreamRequest { SqlId = sqlId, Sql = sql };
+    public static StreamRequest Sequence(string? sql = null, int? sqlId = null)
+    {
+        return new SequenceStreamRequest { Sql = sql, SqlId = sqlId };
+    }
 
-    public static StreamRequest CloseSql(int sqlId) =>
-        new CloseSqlStreamRequest { SqlId = sqlId };
+    public static StreamRequest Describe(string? sql = null, int? sqlId = null)
+    {
+        return new DescribeStreamRequest { Sql = sql, SqlId = sqlId };
+    }
+
+    public static StreamRequest StoreSql(int sqlId, string sql)
+    {
+        return new StoreSqlStreamRequest { SqlId = sqlId, Sql = sql };
+    }
+
+    public static StreamRequest CloseSql(int sqlId)
+    {
+        return new CloseSqlStreamRequest { SqlId = sqlId };
+    }
 }
 
 public sealed class ExecuteStreamRequest : StreamRequest
@@ -71,7 +90,11 @@ public sealed class CloseSqlStreamRequest : StreamRequest
 
 internal sealed class StreamRequestConverter : JsonConverter<StreamRequest>
 {
-    public override StreamRequest Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override StreamRequest Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    )
     {
         using JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement root = doc.RootElement;
@@ -81,37 +104,55 @@ internal sealed class StreamRequestConverter : JsonConverter<StreamRequest>
         {
             "execute" => new ExecuteStreamRequest
             {
-                Stmt = JsonSerializer.Deserialize<Statement>(root.GetProperty("stmt").GetRawText(), options)!
+                Stmt = JsonSerializer.Deserialize<Statement>(
+                    root.GetProperty("stmt").GetRawText(),
+                    options
+                )!,
             },
             "close" => new CloseStreamRequest(),
             "batch" => new BatchStreamRequest
             {
-                Batch = JsonSerializer.Deserialize<Batch>(root.GetProperty("batch").GetRawText(), options)!
+                Batch = JsonSerializer.Deserialize<Batch>(
+                    root.GetProperty("batch").GetRawText(),
+                    options
+                )!,
             },
             "sequence" => new SequenceStreamRequest
             {
-                Sql = root.TryGetProperty("sql", out JsonElement seqSql) ? seqSql.GetString() : null,
-                SqlId = root.TryGetProperty("sql_id", out JsonElement seqSqlId) ? seqSqlId.GetInt32() : null
+                Sql = root.TryGetProperty("sql", out JsonElement seqSql)
+                    ? seqSql.GetString()
+                    : null,
+                SqlId = root.TryGetProperty("sql_id", out JsonElement seqSqlId)
+                    ? seqSqlId.GetInt32()
+                    : null,
             },
             "describe" => new DescribeStreamRequest
             {
-                Sql = root.TryGetProperty("sql", out JsonElement descSql) ? descSql.GetString() : null,
-                SqlId = root.TryGetProperty("sql_id", out JsonElement descSqlId) ? descSqlId.GetInt32() : null
+                Sql = root.TryGetProperty("sql", out JsonElement descSql)
+                    ? descSql.GetString()
+                    : null,
+                SqlId = root.TryGetProperty("sql_id", out JsonElement descSqlId)
+                    ? descSqlId.GetInt32()
+                    : null,
             },
             "store_sql" => new StoreSqlStreamRequest
             {
                 SqlId = root.GetProperty("sql_id").GetInt32(),
-                Sql = root.GetProperty("sql").GetString()!
+                Sql = root.GetProperty("sql").GetString()!,
             },
             "close_sql" => new CloseSqlStreamRequest
             {
-                SqlId = root.GetProperty("sql_id").GetInt32()
+                SqlId = root.GetProperty("sql_id").GetInt32(),
             },
-            _ => throw new JsonException($"Unknown stream request type: {type}")
+            _ => throw new JsonException($"Unknown stream request type: {type}"),
         };
     }
 
-    public override void Write(Utf8JsonWriter writer, StreamRequest value, JsonSerializerOptions options)
+    public override void Write(
+        Utf8JsonWriter writer,
+        StreamRequest value,
+        JsonSerializerOptions options
+    )
     {
         writer.WriteStartObject();
         writer.WriteString("type", value.Type);
@@ -131,20 +172,24 @@ internal sealed class StreamRequestConverter : JsonConverter<StreamRequest>
                 {
                     writer.WriteString("sql", seq.Sql);
                 }
+
                 if (seq.SqlId is not null)
                 {
                     writer.WriteNumber("sql_id", seq.SqlId.Value);
                 }
+
                 break;
             case DescribeStreamRequest desc:
                 if (desc.Sql is not null)
                 {
                     writer.WriteString("sql", desc.Sql);
                 }
+
                 if (desc.SqlId is not null)
                 {
                     writer.WriteNumber("sql_id", desc.SqlId.Value);
                 }
+
                 break;
             case StoreSqlStreamRequest store:
                 writer.WriteNumber("sql_id", store.SqlId);

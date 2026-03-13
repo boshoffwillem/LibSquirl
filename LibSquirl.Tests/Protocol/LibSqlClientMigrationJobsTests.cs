@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-
 using LibSquirl.Protocol;
 using LibSquirl.Protocol.Models;
 
@@ -11,15 +10,20 @@ public class LibSqlClientMigrationJobsTests
     private static ILibSqlClient CreateClient(MockHttpHandler handler)
     {
         HttpClient httpClient = new(handler) { BaseAddress = new Uri("http://localhost:8080") };
-        return new LibSqlClient(httpClient, new LibSqlClientOptions { Url = "http://localhost:8080" });
+        return new LibSqlClient(
+            httpClient,
+            new LibSqlClientOptions { Url = "http://localhost:8080" }
+        );
     }
 
     [Fact]
     public async Task ListMigrationJobsAsync_DeserializesCorrectly()
     {
-        MockHttpHandler handler = new("""
-            {"schema_version":2,"migrations":[{"job_id":1,"status":"RunSuccess"},{"job_id":2,"status":"RunFailure"}]}
-        """);
+        MockHttpHandler handler = new(
+            """
+                {"schema_version":2,"migrations":[{"job_id":1,"status":"RunSuccess"},{"job_id":2,"status":"RunFailure"}]}
+            """
+        );
 
         ILibSqlClient client = CreateClient(handler);
         MigrationJobsSummary result = await client.ListMigrationJobsAsync();
@@ -38,9 +42,11 @@ public class LibSqlClientMigrationJobsTests
     [Fact]
     public async Task GetMigrationJobAsync_DeserializesCorrectly()
     {
-        MockHttpHandler handler = new("""
-            {"job_id":1,"status":"RunSuccess","error":null,"progress":[{"namespace":"default","status":"RunSuccess","error":null}]}
-        """);
+        MockHttpHandler handler = new(
+            """
+                {"job_id":1,"status":"RunSuccess","error":null,"progress":[{"namespace":"default","status":"RunSuccess","error":null}]}
+            """
+        );
 
         ILibSqlClient client = CreateClient(handler);
         MigrationJobDetail result = await client.GetMigrationJobAsync(1);
@@ -58,9 +64,11 @@ public class LibSqlClientMigrationJobsTests
     [Fact]
     public async Task GetMigrationJobAsync_WithError_DeserializesError()
     {
-        MockHttpHandler handler = new("""
-            {"job_id":3,"status":"RunFailure","error":"schema migration failed","progress":[{"namespace":"default","status":"RunFailure","error":"syntax error"}]}
-        """);
+        MockHttpHandler handler = new(
+            """
+                {"job_id":3,"status":"RunFailure","error":"schema migration failed","progress":[{"namespace":"default","status":"RunFailure","error":"syntax error"}]}
+            """
+        );
 
         ILibSqlClient client = CreateClient(handler);
         MigrationJobDetail result = await client.GetMigrationJobAsync(3);
@@ -77,15 +85,20 @@ public class LibSqlClientMigrationJobsTests
         public Uri? LastRequestUri { get; private set; }
         public HttpMethod? LastMethod { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
         {
             LastRequestUri = request.RequestUri;
             LastMethod = request.Method;
 
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(responseJson, Encoding.UTF8, "application/json")
-            });
+            return Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(responseJson, Encoding.UTF8, "application/json"),
+                }
+            );
         }
     }
 }

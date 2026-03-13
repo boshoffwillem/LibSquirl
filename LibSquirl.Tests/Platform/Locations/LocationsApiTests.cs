@@ -1,5 +1,4 @@
 using System.Net;
-
 using LibSquirl.Platform;
 using LibSquirl.Platform.Locations;
 using LibSquirl.Platform.Models;
@@ -8,16 +7,23 @@ namespace LibSquirl.Tests.Platform.Locations;
 
 public class LocationsApiTests
 {
-    private static (LocationsApi api, MockHttpMessageHandler handler, MockHttpMessageHandler regionHandler) CreateApi()
+    private static (
+        LocationsApi api,
+        MockHttpMessageHandler handler,
+        MockHttpMessageHandler regionHandler
+    ) CreateApi()
     {
         MockHttpMessageHandler handler = new();
         HttpClient httpClient = new(handler) { BaseAddress = new Uri("https://api.turso.tech") };
         MockHttpMessageHandler regionHandler = new();
-        HttpClient regionHttpClient = new(regionHandler) { BaseAddress = new Uri("https://region.turso.io") };
+        HttpClient regionHttpClient = new(regionHandler)
+        {
+            BaseAddress = new Uri("https://region.turso.io"),
+        };
         TursoPlatformOptions options = new()
         {
             ApiToken = "test-token",
-            OrganizationSlug = "test-org"
+            OrganizationSlug = "test-org",
         };
         return (new LocationsApi(httpClient, options, regionHttpClient), handler, regionHandler);
     }
@@ -26,9 +32,12 @@ public class LocationsApiTests
     public async Task ListAsync_SendsCorrectRequest()
     {
         (LocationsApi api, MockHttpMessageHandler handler, _) = CreateApi();
-        handler.EnqueueResponse(HttpStatusCode.OK, """
-            {"locations":{"aws-us-east-1":"AWS US East (Virginia)","aws-eu-west-1":"AWS EU West (Ireland)"}}
-        """);
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """
+                {"locations":{"aws-us-east-1":"AWS US East (Virginia)","aws-eu-west-1":"AWS EU West (Ireland)"}}
+            """
+        );
 
         Dictionary<string, string> result = await api.ListAsync();
 
@@ -59,8 +68,9 @@ public class LocationsApiTests
         (LocationsApi api, MockHttpMessageHandler handler, _) = CreateApi();
         handler.EnqueueResponse(HttpStatusCode.Unauthorized, """{"error":"invalid token"}""");
 
-        TursoPlatformException ex = await Assert.ThrowsAsync<TursoPlatformException>(
-            () => api.ListAsync());
+        TursoPlatformException ex = await Assert.ThrowsAsync<TursoPlatformException>(() =>
+            api.ListAsync()
+        );
         Assert.Equal(401, ex.StatusCode);
     }
 }

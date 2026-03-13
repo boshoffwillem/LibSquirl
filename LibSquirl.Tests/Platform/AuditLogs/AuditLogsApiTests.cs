@@ -1,5 +1,4 @@
 using System.Net;
-
 using LibSquirl.Platform;
 using LibSquirl.Platform.AuditLogs;
 using LibSquirl.Platform.Models;
@@ -17,7 +16,7 @@ public class AuditLogsApiTests
         TursoPlatformOptions options = new()
         {
             ApiToken = "test-token",
-            OrganizationSlug = OrgSlug
+            OrganizationSlug = OrgSlug,
         };
         return (new AuditLogsApi(httpClient, options), handler);
     }
@@ -26,14 +25,17 @@ public class AuditLogsApiTests
     public async Task ListAsync_SendsCorrectRequest()
     {
         (AuditLogsApi api, MockHttpMessageHandler handler) = CreateApi();
-        handler.EnqueueResponse(HttpStatusCode.OK, """
-            {
-                "audit_logs": [
-                    {"code":"db-create","message":"","origin":"cli","author":"iku","created_at":"2023-12-20T09:46:08Z","data":{}}
-                ],
-                "pagination": {"page":1,"page_size":10,"total_pages":1,"total_rows":1}
-            }
-        """);
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """
+                {
+                    "audit_logs": [
+                        {"code":"db-create","message":"","origin":"cli","author":"iku","created_at":"2023-12-20T09:46:08Z","data":{}}
+                    ],
+                    "pagination": {"page":1,"page_size":10,"total_pages":1,"total_rows":1}
+                }
+            """
+        );
 
         AuditLogsResponse result = await api.ListAsync();
 
@@ -49,18 +51,24 @@ public class AuditLogsApiTests
         Assert.Equal(1, result.Pagination.TotalRows);
 
         Assert.Equal(HttpMethod.Get, handler.Requests[0].Method);
-        Assert.Contains($"/v1/organizations/{OrgSlug}/audit-logs", handler.Requests[0].Uri.AbsolutePath);
+        Assert.Contains(
+            $"/v1/organizations/{OrgSlug}/audit-logs",
+            handler.Requests[0].Uri.AbsolutePath
+        );
     }
 
     [Fact]
     public async Task ListAsync_WithPagination_SendsCorrectQueryParams()
     {
         (AuditLogsApi api, MockHttpMessageHandler handler) = CreateApi();
-        handler.EnqueueResponse(HttpStatusCode.OK, """
-            {"audit_logs":[],"pagination":{"page":2,"page_size":25,"total_pages":3,"total_rows":75}}
-        """);
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """
+                {"audit_logs":[],"pagination":{"page":2,"page_size":25,"total_pages":3,"total_rows":75}}
+            """
+        );
 
-        await api.ListAsync(page: 2, pageSize: 25);
+        await api.ListAsync(2, 25);
 
         Assert.Contains("page=2", handler.Requests[0].Uri.Query);
         Assert.Contains("page_size=25", handler.Requests[0].Uri.Query);
@@ -70,9 +78,12 @@ public class AuditLogsApiTests
     public async Task ListAsync_EmptyLogs_ReturnsEmptyList()
     {
         (AuditLogsApi api, MockHttpMessageHandler handler) = CreateApi();
-        handler.EnqueueResponse(HttpStatusCode.OK, """
-            {"audit_logs":[],"pagination":{"page":1,"page_size":10,"total_pages":0,"total_rows":0}}
-        """);
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """
+                {"audit_logs":[],"pagination":{"page":1,"page_size":10,"total_pages":0,"total_rows":0}}
+            """
+        );
 
         AuditLogsResponse result = await api.ListAsync();
 
@@ -86,8 +97,9 @@ public class AuditLogsApiTests
         (AuditLogsApi api, MockHttpMessageHandler handler) = CreateApi();
         handler.EnqueueResponse(HttpStatusCode.Unauthorized, """{"error":"unauthorized"}""");
 
-        TursoPlatformException ex = await Assert.ThrowsAsync<TursoPlatformException>(
-            () => api.ListAsync());
+        TursoPlatformException ex = await Assert.ThrowsAsync<TursoPlatformException>(() =>
+            api.ListAsync()
+        );
         Assert.Equal(401, ex.StatusCode);
     }
 }

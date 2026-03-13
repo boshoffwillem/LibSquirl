@@ -8,11 +8,30 @@ public abstract record Value
 {
     public abstract string Type { get; }
 
-    public static Value Null() => NullValue.Instance;
-    public static Value Integer(long value) => new IntegerValue(value);
-    public static Value Float(double value) => new FloatValue(value);
-    public static Value Text(string value) => new TextValue(value);
-    public static Value Blob(byte[] value) => new BlobValue(value);
+    public static Value Null()
+    {
+        return NullValue.Instance;
+    }
+
+    public static Value Integer(long value)
+    {
+        return new IntegerValue(value);
+    }
+
+    public static Value Float(double value)
+    {
+        return new FloatValue(value);
+    }
+
+    public static Value Text(string value)
+    {
+        return new TextValue(value);
+    }
+
+    public static Value Blob(byte[] value)
+    {
+        return new BlobValue(value);
+    }
 }
 
 public sealed record NullValue : Value
@@ -44,7 +63,11 @@ public sealed record BlobValue(byte[] Val) : Value
 
 internal sealed class ValueConverter : JsonConverter<Value>
 {
-    public override Value Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override Value Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    )
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
@@ -85,6 +108,7 @@ internal sealed class ValueConverter : JsonConverter<Value>
                     {
                         numberValue = reader.GetDouble();
                     }
+
                     break;
                 case "base64":
                     base64Value = reader.GetString();
@@ -99,7 +123,7 @@ internal sealed class ValueConverter : JsonConverter<Value>
             "float" => new FloatValue(numberValue ?? double.Parse(stringValue!)),
             "text" => new TextValue(stringValue!),
             "blob" => new BlobValue(Convert.FromBase64String(PadBase64(base64Value!))),
-            _ => throw new JsonException($"Unknown value type: {type}")
+            _ => throw new JsonException($"Unknown value type: {type}"),
         };
     }
 
@@ -140,7 +164,7 @@ internal sealed class ValueConverter : JsonConverter<Value>
         {
             2 => base64 + "==",
             3 => base64 + "=",
-            _ => base64
+            _ => base64,
         };
     }
 }

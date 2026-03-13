@@ -66,7 +66,11 @@ public sealed class CloseSqlStreamResponse : StreamResponse
 
 internal sealed class StreamResponseConverter : JsonConverter<StreamResponse>
 {
-    public override StreamResponse Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override StreamResponse Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    )
     {
         using JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement root = doc.RootElement;
@@ -76,25 +80,38 @@ internal sealed class StreamResponseConverter : JsonConverter<StreamResponse>
         {
             "execute" => new ExecuteStreamResponse
             {
-                Result = JsonSerializer.Deserialize<StatementResult>(root.GetProperty("result").GetRawText(), options)!
+                Result = JsonSerializer.Deserialize<StatementResult>(
+                    root.GetProperty("result").GetRawText(),
+                    options
+                )!,
             },
             "close" => new CloseStreamResponse(),
             "batch" => new BatchStreamResponse
             {
-                Result = JsonSerializer.Deserialize<BatchResult>(root.GetProperty("result").GetRawText(), options)!
+                Result = JsonSerializer.Deserialize<BatchResult>(
+                    root.GetProperty("result").GetRawText(),
+                    options
+                )!,
             },
             "sequence" => new SequenceStreamResponse(),
             "describe" => new DescribeStreamResponse
             {
-                Result = JsonSerializer.Deserialize<DescribeResult>(root.GetProperty("result").GetRawText(), options)!
+                Result = JsonSerializer.Deserialize<DescribeResult>(
+                    root.GetProperty("result").GetRawText(),
+                    options
+                )!,
             },
             "store_sql" => new StoreSqlStreamResponse(),
             "close_sql" => new CloseSqlStreamResponse(),
-            _ => throw new JsonException($"Unknown stream response type: {type}")
+            _ => throw new JsonException($"Unknown stream response type: {type}"),
         };
     }
 
-    public override void Write(Utf8JsonWriter writer, StreamResponse value, JsonSerializerOptions options)
+    public override void Write(
+        Utf8JsonWriter writer,
+        StreamResponse value,
+        JsonSerializerOptions options
+    )
     {
         writer.WriteStartObject();
         writer.WriteString("type", value.Type);

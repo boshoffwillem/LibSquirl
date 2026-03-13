@@ -1,5 +1,4 @@
 using System.Text.Json;
-
 using LibSquirl.Protocol.Models;
 
 namespace LibSquirl.Tests.Protocol;
@@ -52,7 +51,7 @@ public class ValueSerializationTests
         Value? deserialized = JsonSerializer.Deserialize<Value>(json, s_options);
 
         FloatValue fv = Assert.IsType<FloatValue>(deserialized);
-        Assert.Equal(3.14, fv.Val, precision: 10);
+        Assert.Equal(3.14, fv.Val, 10);
     }
 
     [Fact]
@@ -95,7 +94,8 @@ public class ValueSerializationTests
     {
         BatchCondition original = BatchCondition.And(
             BatchCondition.Ok(0),
-            BatchCondition.Not(BatchCondition.Error(1)));
+            BatchCondition.Not(BatchCondition.Error(1))
+        );
 
         string json = JsonSerializer.Serialize(original, s_options);
         BatchCondition? deserialized = JsonSerializer.Deserialize<BatchCondition>(json, s_options);
@@ -144,8 +144,8 @@ public class ValueSerializationTests
             Requests =
             [
                 StreamRequest.Execute(new Statement { Sql = "SELECT 1" }),
-                StreamRequest.Close()
-            ]
+                StreamRequest.Close(),
+            ],
         };
 
         string json = JsonSerializer.Serialize(request, s_options);

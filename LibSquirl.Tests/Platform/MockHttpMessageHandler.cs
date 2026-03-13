@@ -7,8 +7,8 @@ namespace LibSquirl.Tests.Platform;
 /// A mock HttpMessageHandler that records requests and returns preconfigured responses.
 public sealed class MockHttpMessageHandler : HttpMessageHandler
 {
-    private readonly Queue<MockResponse> _responses = new();
     private readonly List<RecordedRequest> _requests = [];
+    private readonly Queue<MockResponse> _responses = new();
 
     public IReadOnlyList<RecordedRequest> Requests => _requests;
 
@@ -24,21 +24,21 @@ public sealed class MockHttpMessageHandler : HttpMessageHandler
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request, CancellationToken cancellationToken)
+        HttpRequestMessage request,
+        CancellationToken cancellationToken
+    )
     {
         string? requestBody = request.Content is not null
             ? await request.Content.ReadAsStringAsync(cancellationToken)
             : null;
 
-        _requests.Add(new RecordedRequest(
-            request.Method,
-            request.RequestUri!,
-            requestBody));
+        _requests.Add(new RecordedRequest(request.Method, request.RequestUri!, requestBody));
 
         if (_responses.Count == 0)
         {
             throw new InvalidOperationException(
-                $"No mock response configured for {request.Method} {request.RequestUri}");
+                $"No mock response configured for {request.Method} {request.RequestUri}"
+            );
         }
 
         MockResponse mockResponse = _responses.Dequeue();
@@ -46,8 +46,13 @@ public sealed class MockHttpMessageHandler : HttpMessageHandler
         HttpResponseMessage response = new(mockResponse.StatusCode);
         if (mockResponse.Body is not null)
         {
-            response.Content = new StringContent(mockResponse.Body, Encoding.UTF8, "application/json");
+            response.Content = new StringContent(
+                mockResponse.Body,
+                Encoding.UTF8,
+                "application/json"
+            );
         }
+
         return response;
     }
 

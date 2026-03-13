@@ -33,15 +33,19 @@ public class LibSqlClientExecuteTests(LibSqlServerFixture fixture)
         string tableName = $"test_exec_{Guid.NewGuid():N}";
         try
         {
-            await _client.ExecuteAsync($"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)");
+            await _client.ExecuteAsync(
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT)"
+            );
 
             StatementResult insertResult = await _client.ExecuteAsync(
-                $"INSERT INTO {tableName} (name) VALUES ('alice')");
+                $"INSERT INTO {tableName} (name) VALUES ('alice')"
+            );
             Assert.Equal(1, insertResult.AffectedRowCount);
             Assert.NotNull(insertResult.LastInsertRowId);
 
             StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT id, name FROM {tableName}");
+                $"SELECT id, name FROM {tableName}"
+            );
             Assert.Single(selectResult.Rows);
             Assert.Equal("alice", ((TextValue)selectResult.Rows[0][1]).Val);
         }
@@ -57,14 +61,18 @@ public class LibSqlClientExecuteTests(LibSqlServerFixture fixture)
         string tableName = $"test_pos_{Guid.NewGuid():N}";
         try
         {
-            await _client.ExecuteAsync($"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)");
+            await _client.ExecuteAsync(
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"
+            );
             await _client.ExecuteAsync(
                 $"INSERT INTO {tableName} (name, age) VALUES (?, ?)",
-                args: [Value.Text("bob"), Value.Integer(30)]);
+                [Value.Text("bob"), Value.Integer(30)]
+            );
 
             StatementResult result = await _client.ExecuteAsync(
                 $"SELECT name, age FROM {tableName} WHERE age > ?",
-                args: [Value.Integer(25)]);
+                [Value.Integer(25)]
+            );
 
             Assert.Single(result.Rows);
             Assert.Equal("bob", ((TextValue)result.Rows[0][0]).Val);
@@ -82,18 +90,22 @@ public class LibSqlClientExecuteTests(LibSqlServerFixture fixture)
         string tableName = $"test_named_{Guid.NewGuid():N}";
         try
         {
-            await _client.ExecuteAsync($"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT, score REAL)");
+            await _client.ExecuteAsync(
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, name TEXT, score REAL)"
+            );
             await _client.ExecuteAsync(
                 $"INSERT INTO {tableName} (name, score) VALUES (:name, :score)",
                 namedArgs:
                 [
                     new NamedArg { Name = ":name", Value = Value.Text("charlie") },
-                    new NamedArg { Name = ":score", Value = Value.Float(95.5) }
-                ]);
+                    new NamedArg { Name = ":score", Value = Value.Float(95.5) },
+                ]
+            );
 
             StatementResult result = await _client.ExecuteAsync(
                 $"SELECT name, score FROM {tableName} WHERE name = :name",
-                namedArgs: [new NamedArg { Name = ":name", Value = Value.Text("charlie") }]);
+                namedArgs: [new NamedArg { Name = ":name", Value = Value.Text("charlie") }]
+            );
 
             Assert.Single(result.Rows);
             Assert.Equal("charlie", ((TextValue)result.Rows[0][0]).Val);
@@ -111,13 +123,15 @@ public class LibSqlClientExecuteTests(LibSqlServerFixture fixture)
         string tableName = $"test_null_{Guid.NewGuid():N}";
         try
         {
-            await _client.ExecuteAsync($"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, data TEXT)");
+            await _client.ExecuteAsync(
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, data TEXT)"
+            );
             await _client.ExecuteAsync(
                 $"INSERT INTO {tableName} (data) VALUES (?)",
-                args: [Value.Null()]);
+                [Value.Null()]
+            );
 
-            StatementResult result = await _client.ExecuteAsync(
-                $"SELECT data FROM {tableName}");
+            StatementResult result = await _client.ExecuteAsync($"SELECT data FROM {tableName}");
             Assert.Single(result.Rows);
             Assert.IsType<NullValue>(result.Rows[0][0]);
         }
@@ -134,13 +148,15 @@ public class LibSqlClientExecuteTests(LibSqlServerFixture fixture)
         try
         {
             byte[] data = [0x01, 0x02, 0x03, 0xFF];
-            await _client.ExecuteAsync($"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, data BLOB)");
+            await _client.ExecuteAsync(
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, data BLOB)"
+            );
             await _client.ExecuteAsync(
                 $"INSERT INTO {tableName} (data) VALUES (?)",
-                args: [Value.Blob(data)]);
+                [Value.Blob(data)]
+            );
 
-            StatementResult result = await _client.ExecuteAsync(
-                $"SELECT data FROM {tableName}");
+            StatementResult result = await _client.ExecuteAsync($"SELECT data FROM {tableName}");
             Assert.Single(result.Rows);
             BlobValue blobValue = Assert.IsType<BlobValue>(result.Rows[0][0]);
             Assert.Equal(data, blobValue.Val);
@@ -157,19 +173,24 @@ public class LibSqlClientExecuteTests(LibSqlServerFixture fixture)
         string tableName = $"test_upd_{Guid.NewGuid():N}";
         try
         {
-            await _client.ExecuteAsync($"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val INTEGER)");
+            await _client.ExecuteAsync(
+                $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val INTEGER)"
+            );
             await _client.ExecuteAsync($"INSERT INTO {tableName} (val) VALUES (1), (2), (3)");
 
             StatementResult updateResult = await _client.ExecuteAsync(
-                $"UPDATE {tableName} SET val = val + 10 WHERE val > 1");
+                $"UPDATE {tableName} SET val = val + 10 WHERE val > 1"
+            );
             Assert.Equal(2, updateResult.AffectedRowCount);
 
             StatementResult deleteResult = await _client.ExecuteAsync(
-                $"DELETE FROM {tableName} WHERE val = 1");
+                $"DELETE FROM {tableName} WHERE val = 1"
+            );
             Assert.Equal(1, deleteResult.AffectedRowCount);
 
             StatementResult selectResult = await _client.ExecuteAsync(
-                $"SELECT val FROM {tableName} ORDER BY val");
+                $"SELECT val FROM {tableName} ORDER BY val"
+            );
             Assert.Equal(2, selectResult.Rows.Count);
             Assert.Equal(12L, ((IntegerValue)selectResult.Rows[0][0]).Val);
             Assert.Equal(13L, ((IntegerValue)selectResult.Rows[1][0]).Val);
@@ -183,7 +204,8 @@ public class LibSqlClientExecuteTests(LibSqlServerFixture fixture)
     [Fact]
     public async Task ExecuteAsync_InvalidSql_ThrowsLibSqlException()
     {
-        await Assert.ThrowsAsync<LibSqlException>(
-            () => _client.ExecuteAsync("SELECT FROM WHERE INVALID"));
+        await Assert.ThrowsAsync<LibSqlException>(() =>
+            _client.ExecuteAsync("SELECT FROM WHERE INVALID")
+        );
     }
 }
