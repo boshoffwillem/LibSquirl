@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="LibSquirl.Tests/LibSquirl.Tests.csproj" />
+  <Project Path="LibSquirl/LibSquirl.csproj" />
+</Solution>
