@@ -24,7 +24,10 @@ LibSquirl/
 │   ├── ILibSqlClient.cs         # Protocol client interface
 │   ├── LibSqlClient.cs          # Implementation
 │   ├── LibSqlClientOptions.cs   # URL + auth token config
-│   └── LibSqlException.cs       # Custom exception
+│   ├── LibSqlException.cs       # Custom exception
+│   ├── ColumnNameAttribute.cs   # [ColumnName] for result mapping
+│   ├── StatementResultExtensions.cs  # MapTo<T>(), MapToFirstOrDefault<T>()
+│   └── StatementResultMapper.cs # Internal: cached reflection + type conversion
 ├── Platform/                    # Turso Platform REST API wrapper
 │   ├── Models/                  # Organization, Group, Database, Member, etc.
 │   ├── Organizations/           # IOrganizationsApi + OrganizationsApi
@@ -87,6 +90,40 @@ public sealed class GroupsApi(HttpClient httpClient, TursoPlatformOptions option
 - Polymorphic JSON serialization uses custom `JsonConverter<T>` implementations (not `[JsonDerivedType]`)
 - Value types are discriminated by a `"type"` field: `null`, `integer`, `float`, `text`, `blob`
 - libSQL returns **unpadded base64** for blobs — use the `PadBase64()` helper in `ValueConverter`
+
+### Result-to-type mapping
+
+`StatementResult` has extension methods to map rows to strongly-typed C# objects:
+
+```csharp
+StatementResult result = await client.ExecuteAsync("SELECT * FROM users");
+List<User> users = result.MapTo<User>();
+User? first = result.MapToFirstOrDefault<User>();
+```
+
+**Column-to-property matching rules:**
+
+1. If `[ColumnName("col")]` is present on the property, match against that name
+2. Otherwise, match by property name (case-insensitive) against column names
+3. Properties without a matching column are left at their default value
+4. Columns without a matching property are silently ignored
+
+**Supported type conversions:**
+
+| Value Type | Target CLR Types |
+|---|---|
+| `IntegerValue(long)` | `long`, `int`, `short`, `byte`, `bool` (0/1), `uint`, `ulong`, `ushort`, `enum`, and nullable variants |
+| `FloatValue(double)` | `double`, `float`, `decimal`, and nullable variants |
+| `TextValue(string)` | `string`, `DateTime`, `DateTimeOffset`, `Guid`, `enum` (case-insensitive), and nullable variants |
+| `BlobValue(byte[])` | `byte[]` |
+| `NullValue` | `null` for nullable/reference types; throws `InvalidOperationException` for non-nullable value types |
+
+**Key implementation details:**
+
+- `StatementResultMapper` is `internal static` — reflection metadata is cached per type in a `ConcurrentDictionary`
+- `StatementResultExtensions` is the public API surface — extension methods on `StatementResult`
+- Target type `T` must have a parameterless constructor (`where T : new()`)
+- `MapToFirstOrDefault<T>` additionally requires `where T : class`
 
 ## Coding Conventions
 
