@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
+using System.Text.Json;
 using LibSquirl.Protocol.Models;
 
 namespace LibSquirl.Protocol;
@@ -264,9 +265,20 @@ internal static class StatementResultMapper
             return Enum.Parse(targetType, val, true);
         }
 
-        throw new InvalidOperationException(
-            $"Cannot convert TextValue to '{targetType.Name}' for property '{propertyName}'."
-        );
+        // Fallback: try JSON deserialization for complex types (e.g., IReadOnlyList<string>)
+        try
+        {
+            return JsonSerializer.Deserialize(val, targetType)
+                ?? throw new InvalidOperationException(
+                    $"JSON deserialization returned null for property '{propertyName}'."
+                );
+        }
+        catch (JsonException)
+        {
+            throw new InvalidOperationException(
+                $"Cannot convert TextValue to '{targetType.Name}' for property '{propertyName}'."
+            );
+        }
     }
 
     private static object ConvertBlob(byte[] val, Type targetType, string propertyName)

@@ -5,10 +5,12 @@ namespace LibSquirl.Platform.Databases;
 public interface IDatabasesApi
 {
     Task<List<Database>> ListAsync(CancellationToken cancellationToken = default);
+
     Task<Database> CreateAsync(
         CreateDatabaseRequest request,
         CancellationToken cancellationToken = default
     );
+
     Task<Database> GetAsync(string databaseName, CancellationToken cancellationToken = default);
     Task<string> DeleteAsync(string databaseName, CancellationToken cancellationToken = default);
 
@@ -21,10 +23,12 @@ public interface IDatabasesApi
     );
 
     Task InvalidateTokensAsync(string databaseName, CancellationToken cancellationToken = default);
+
     Task<DatabaseStats> GetStatsAsync(
         string databaseName,
         CancellationToken cancellationToken = default
     );
+
     Task<List<DatabaseInstance>> ListInstancesAsync(
         string databaseName,
         CancellationToken cancellationToken = default
@@ -51,6 +55,7 @@ public interface IDatabasesApi
         string databaseName,
         CancellationToken cancellationToken = default
     );
+
     Task<Database> UploadDumpAsync(
         string databaseName,
         Stream dumpFile,

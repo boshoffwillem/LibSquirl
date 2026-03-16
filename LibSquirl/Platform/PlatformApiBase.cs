@@ -9,7 +9,7 @@ public abstract class PlatformApiBase
     protected static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     protected readonly HttpClient HttpClient;
@@ -30,7 +30,11 @@ public abstract class PlatformApiBase
         return (await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken))!;
     }
 
-    protected async Task<T> PostAsync<T>(string path, object? body, CancellationToken cancellationToken)
+    protected async Task<T> PostAsync<T>(
+        string path,
+        object? body,
+        CancellationToken cancellationToken
+    )
     {
         using HttpResponseMessage response = body is not null
             ? await HttpClient.PostAsJsonAsync(path, body, JsonOptions, cancellationToken)
@@ -52,7 +56,11 @@ public abstract class PlatformApiBase
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
-    protected async Task<T> PatchAsync<T>(string path, object? body, CancellationToken cancellationToken)
+    protected async Task<T> PatchAsync<T>(
+        string path,
+        object? body,
+        CancellationToken cancellationToken
+    )
     {
         using HttpResponseMessage response = body is not null
             ? await HttpClient.PatchAsJsonAsync(path, body, JsonOptions, cancellationToken)
@@ -61,14 +69,18 @@ public abstract class PlatformApiBase
         return (await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken))!;
     }
 
-    protected static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    protected static async Task EnsureSuccessAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken
+    )
     {
         if (!response.IsSuccessStatusCode)
         {
             string body = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new TursoPlatformException(
                 $"API request failed with status {response.StatusCode}: {body}",
-                (int)response.StatusCode);
+                (int)response.StatusCode
+            );
         }
     }
 }
