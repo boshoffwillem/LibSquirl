@@ -174,6 +174,15 @@ public class StatementResultMappingTests
         public string Computed => $"Item-{Id}";
     }
 
+    public sealed class TextNumericTypes
+    {
+        public decimal DecimalVal { get; set; }
+        public double DoubleVal { get; set; }
+        public float FloatVal { get; set; }
+        public int IntVal { get; set; }
+        public long LongVal { get; set; }
+    }
+
     #endregion
 
     #region MapTo<T> - Basic Mapping
@@ -434,6 +443,101 @@ public class StatementResultMappingTests
         List<EnumFromText> items = result.MapTo<EnumFromText>();
 
         Assert.Equal(Status.Inactive, items[0].Status);
+    }
+
+    #endregion
+
+    #region Text-to-Numeric Conversions
+
+    [Fact]
+    public void MapTo_TextValue_ConvertsToDecimal()
+    {
+        StatementResult result = CreateResult(
+            ["decimalval"],
+            [
+                [Value.Text("99.99")],
+            ]
+        );
+
+        List<TextNumericTypes> items = result.MapTo<TextNumericTypes>();
+
+        Assert.Single(items);
+        Assert.Equal(99.99m, items[0].DecimalVal);
+    }
+
+    [Fact]
+    public void MapTo_TextValue_ConvertsToDouble()
+    {
+        StatementResult result = CreateResult(
+            ["doubleval"],
+            [
+                [Value.Text("3.14")],
+            ]
+        );
+
+        List<TextNumericTypes> items = result.MapTo<TextNumericTypes>();
+
+        Assert.Equal(3.14, items[0].DoubleVal);
+    }
+
+    [Fact]
+    public void MapTo_TextValue_ConvertsToFloat()
+    {
+        StatementResult result = CreateResult(
+            ["floatval"],
+            [
+                [Value.Text("2.5")],
+            ]
+        );
+
+        List<TextNumericTypes> items = result.MapTo<TextNumericTypes>();
+
+        Assert.Equal(2.5f, items[0].FloatVal);
+    }
+
+    [Fact]
+    public void MapTo_TextValue_ConvertsToInt()
+    {
+        StatementResult result = CreateResult(
+            ["intval"],
+            [
+                [Value.Text("42")],
+            ]
+        );
+
+        List<TextNumericTypes> items = result.MapTo<TextNumericTypes>();
+
+        Assert.Equal(42, items[0].IntVal);
+    }
+
+    [Fact]
+    public void MapTo_TextValue_ConvertsToLong()
+    {
+        StatementResult result = CreateResult(
+            ["longval"],
+            [
+                [Value.Text("9999999999")],
+            ]
+        );
+
+        List<TextNumericTypes> items = result.MapTo<TextNumericTypes>();
+
+        Assert.Equal(9999999999L, items[0].LongVal);
+    }
+
+    [Fact]
+    public void MapTo_TextValue_DecimalWithHighPrecision()
+    {
+        StatementResult result = CreateResult(
+            ["decimalval"],
+            [
+                [Value.Text("12345.67")],
+            ]
+        );
+
+        List<TextNumericTypes> items = result.MapTo<TextNumericTypes>();
+
+        Assert.Equal(12345.67m, items[0].DecimalVal);
     }
 
     #endregion

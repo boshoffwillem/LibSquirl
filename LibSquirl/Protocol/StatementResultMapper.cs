@@ -260,6 +260,31 @@ internal static class StatementResultMapper
             return Guid.Parse(val);
         }
 
+        if (targetType == typeof(decimal))
+        {
+            return decimal.Parse(val, CultureInfo.InvariantCulture);
+        }
+
+        if (targetType == typeof(double))
+        {
+            return double.Parse(val, CultureInfo.InvariantCulture);
+        }
+
+        if (targetType == typeof(float))
+        {
+            return float.Parse(val, CultureInfo.InvariantCulture);
+        }
+
+        if (targetType == typeof(int))
+        {
+            return int.Parse(val, CultureInfo.InvariantCulture);
+        }
+
+        if (targetType == typeof(long))
+        {
+            return long.Parse(val, CultureInfo.InvariantCulture);
+        }
+
         if (targetType.IsEnum)
         {
             return Enum.Parse(targetType, val, true);
