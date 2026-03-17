@@ -19,11 +19,13 @@ LibSquirl is a C# class library providing two layers:
 
 ```
 LibSquirl/
+├── Sql.cs                       # Convenience NamedArg factories & IN-clause builders
 ├── Protocol/                    # libSQL HTTP v2 protocol client
 │   ├── Models/                  # Value, Statement, Batch, StreamRequest, etc.
 │   ├── ILibSqlClient.cs         # Protocol client interface
 │   ├── LibSqlClient.cs          # Implementation
 │   ├── LibSqlClientOptions.cs   # URL + auth token config
+│   ├── LibSqlClientExtensions.cs # ExecuteMultipleAsync batch extension
 │   ├── LibSqlException.cs       # Custom exception
 │   ├── ColumnNameAttribute.cs   # [ColumnName] for result mapping
 │   ├── StatementResultExtensions.cs  # MapTo<T>(), MapToFirstOrDefault<T>()
@@ -44,6 +46,7 @@ LibSquirl/
 └── Serialization/               # Shared serialization helpers (if any)
 
 LibSquirl.Tests/
+├── SqlTests.cs                  # Unit tests for Sql helper (no Docker needed)
 ├── Protocol/                    # Integration tests (Docker libsql-server) + unit tests
 │   ├── LibSqlServerFixture.cs   # xUnit collection fixture for Docker container
 │   └── *Tests.cs
@@ -90,6 +93,70 @@ public sealed class GroupsApi(HttpClient httpClient, TursoPlatformOptions option
 - Polymorphic JSON serialization uses custom `JsonConverter<T>` implementations (not `[JsonDerivedType]`)
 - Value types are discriminated by a `"type"` field: `null`, `integer`, `float`, `text`, `blob`
 - libSQL returns **unpadded base64** for blobs — use the `PadBase64()` helper in `ValueConverter`
+
+### SQL parameter helpers (`Sql` static class)
+
+The `Sql` static class in the root namespace provides convenience factory methods for building `NamedArg` parameters and SQL IN-clause placeholders, eliminating verbose `new NamedArg { Name, Value }` boilerplate:
+
+```csharp
+using LibSquirl;
+
+// Single-value args — type-safe, auto-formatted
+Sql.Arg(":name", "alice")              // → Value.Text("alice")
+Sql.Arg(":id", someGuid)              // → Value.Text(guid.ToString())
+Sql.Arg(":age", 42)                   // → Value.Integer(42)
+Sql.Arg(":active", true)              // → Value.Integer(1)
+Sql.Arg(":score", 3.14)               // → Value.Float(3.14)
+Sql.Arg(":amount", 99.9m)             // → Value.Text("99.90") — F2 format
+Sql.Arg(":created", dateTime)          // → Value.Text("2024-06-15T10:30:45.123Z") — UTC ISO 8601
+
+// Nullable args — Value.Null() when null
+Sql.ArgNullable(":ref", (Guid?)null)   // → Value.Null()
+Sql.ArgNullable(":ref", (Guid?)id)     // → Value.Text(id.ToString())
+// Supports: string?, Guid?, int?, long?, double?, decimal?, DateTime?
+
+// IN-clause builders — returns (placeholders, args) tuple
+var (inSql, inArgs) = Sql.In(":id", guids);     // → (":id0, :id1, :id2", NamedArg[])
+var (inSql, inArgs) = Sql.In(":s", strings);     // same for string lists
+var (inSql, inArgs) = Sql.In(":id", emptyList);  // → ("1=0", []) — always valid SQL
+
+// Combine fixed args with IN-clause args
+NamedArg[] allArgs = Sql.CombineArgs(inArgs, Sql.Arg(":status", "Active"));
+
+// Usage in query
+StatementResult result = await client.ExecuteAsync(
+    $"SELECT * FROM Products WHERE Id IN ({inSql}) AND Status = :status",
+    namedArgs: allArgs
+);
+```
+
+### Batch execution (`ExecuteMultipleAsync` extension)
+
+The `LibSqlClientExtensions` class provides `ExecuteMultipleAsync`, a high-level extension on `ILibSqlClient` that sends multiple SQL statements in a single HTTP request using the batch API:
+
+```csharp
+using LibSquirl.Protocol;
+
+List<(string Sql, IReadOnlyList<NamedArg>? NamedArgs)> statements =
+[
+    ("SELECT * FROM Products WHERE ProducerId = :pid", [Sql.Arg(":pid", producerId)]),
+    ("SELECT * FROM Categories", null),
+    ("SELECT * FROM PickupPoints WHERE ProducerId = :pid", [Sql.Arg(":pid", producerId)]),
+];
+
+IReadOnlyList<StatementResult> results = await client.ExecuteMultipleAsync(statements);
+
+List<Product> products = results[0].MapTo<Product>();
+List<Category> categories = results[1].MapTo<Category>();
+List<PickupPoint> points = results[2].MapTo<PickupPoint>();
+```
+
+**Behavior:**
+- Empty list → returns `[]`
+- Single statement → falls through to `ExecuteAsync` (no batch overhead)
+- Multiple statements → wraps in `BatchAsync` (single HTTP POST)
+- Throws `LibSqlException` if any step returns an error (includes step index in message)
+- Each `StatementResult` in the returned list supports `MapTo<T>()` and `MapToFirstOrDefault<T>()`
 
 ### Result-to-type mapping
 
