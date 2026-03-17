@@ -181,7 +181,7 @@ User? first = result.MapToFirstOrDefault<User>();
 |---|---|
 | `IntegerValue(long)` | `long`, `int`, `short`, `byte`, `bool` (0/1), `uint`, `ulong`, `ushort`, `enum`, and nullable variants |
 | `FloatValue(double)` | `double`, `float`, `decimal`, and nullable variants |
-| `TextValue(string)` | `string`, `DateTime`, `DateTimeOffset`, `Guid`, `enum` (case-insensitive), and nullable variants |
+| `TextValue(string)` | `string`, `DateTime`, `DateTimeOffset`, `Guid`, `decimal`, `double`, `float`, `int`, `long`, `enum` (case-insensitive), and nullable variants |
 | `BlobValue(byte[])` | `byte[]` |
 | `NullValue` | `null` for nullable/reference types; throws `InvalidOperationException` for non-nullable value types |
 
