@@ -30,7 +30,11 @@ public static class Sql
         new() { Name = name, Value = Value.Float(value) };
 
     public static NamedArg Arg(string name, decimal value) =>
-        new() { Name = name, Value = Value.Text(value.ToString("F2", CultureInfo.InvariantCulture)) };
+        new()
+        {
+            Name = name,
+            Value = Value.Text(value.ToString("F2", CultureInfo.InvariantCulture)),
+        };
 
     public static NamedArg Arg(string name, DateTime value) =>
         new()
@@ -56,25 +60,13 @@ public static class Sql
         };
 
     public static NamedArg ArgNullable(string name, int? value) =>
-        new()
-        {
-            Name = name,
-            Value = value.HasValue ? Value.Integer(value.Value) : Value.Null(),
-        };
+        new() { Name = name, Value = value.HasValue ? Value.Integer(value.Value) : Value.Null() };
 
     public static NamedArg ArgNullable(string name, long? value) =>
-        new()
-        {
-            Name = name,
-            Value = value.HasValue ? Value.Integer(value.Value) : Value.Null(),
-        };
+        new() { Name = name, Value = value.HasValue ? Value.Integer(value.Value) : Value.Null() };
 
     public static NamedArg ArgNullable(string name, double? value) =>
-        new()
-        {
-            Name = name,
-            Value = value.HasValue ? Value.Float(value.Value) : Value.Null(),
-        };
+        new() { Name = name, Value = value.HasValue ? Value.Float(value.Value) : Value.Null() };
 
     public static NamedArg ArgNullable(string name, decimal? value) =>
         new()
@@ -151,11 +143,7 @@ public static class Sql
         for (int i = 0; i < values.Count; i++)
         {
             placeholders[i] = $"{prefix}{i}";
-            args[i] = new NamedArg
-            {
-                Name = $"{prefix}{i}",
-                Value = Value.Text(values[i]),
-            };
+            args[i] = new NamedArg { Name = $"{prefix}{i}", Value = Value.Text(values[i]) };
         }
 
         return (string.Join(", ", placeholders), args);

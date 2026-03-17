@@ -45,10 +45,7 @@ public static class LibSqlClientExtensions
             return [result];
         }
 
-        Batch batch = new()
-        {
-            Steps = new List<BatchStep>(statements.Count),
-        };
+        Batch batch = new() { Steps = new List<BatchStep>(statements.Count) };
 
         for (int i = 0; i < statements.Count; i++)
         {
@@ -73,9 +70,7 @@ public static class LibSqlClientExtensions
         {
             if (i < batchResult.StepErrors.Count && batchResult.StepErrors[i] is { } error)
             {
-                throw new LibSqlException(
-                    $"Batch step {i} failed: [{error.Code}] {error.Message}"
-                );
+                throw new LibSqlException($"Batch step {i} failed: [{error.Code}] {error.Message}");
             }
 
             results[i] =

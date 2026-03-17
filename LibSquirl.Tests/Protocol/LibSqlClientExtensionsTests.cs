@@ -146,8 +146,8 @@ public class LibSqlClientExtensionsTests(LibSqlServerFixture fixture)
                 ($"INSERT INTO {tableName} (name) VALUES (NULL)", null), // NOT NULL violation
             ];
 
-            LibSqlException ex = await Assert.ThrowsAsync<LibSqlException>(
-                () => _client.ExecuteMultipleAsync(statements)
+            LibSqlException ex = await Assert.ThrowsAsync<LibSqlException>(() =>
+                _client.ExecuteMultipleAsync(statements)
             );
 
             Assert.Contains("step 1", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -167,9 +167,7 @@ public class LibSqlClientExtensionsTests(LibSqlServerFixture fixture)
             await _client.ExecuteAsync(
                 $"CREATE TABLE {tableName} (id INTEGER PRIMARY KEY, val TEXT)"
             );
-            await _client.ExecuteAsync(
-                $"INSERT INTO {tableName} (val) VALUES ('existing')"
-            );
+            await _client.ExecuteAsync($"INSERT INTO {tableName} (val) VALUES ('existing')");
 
             List<(string Sql, IReadOnlyList<NamedArg>? NamedArgs)> statements =
             [
@@ -273,8 +271,9 @@ public class LibSqlClientExtensionsTests(LibSqlServerFixture fixture)
                 ($"SELECT name FROM {tableName} WHERE id IN ({inSql}) ORDER BY name", inArgs),
             ];
 
-            IReadOnlyList<StatementResult> results =
-                await _client.ExecuteMultipleAsync(selectStatements);
+            IReadOnlyList<StatementResult> results = await _client.ExecuteMultipleAsync(
+                selectStatements
+            );
 
             Assert.Equal(2, results[0].Rows.Count);
             Assert.Equal("alice", ((TextValue)results[0].Rows[0][0]).Val);
@@ -300,7 +299,10 @@ public class LibSqlClientExtensionsTests(LibSqlServerFixture fixture)
             [
                 (
                     $"INSERT INTO {tableName} (label, ref_id) VALUES (:label, :ref)",
-                    [Sql.ArgNullable(":label", (string?)"has-value"), Sql.ArgNullable(":ref", (Guid?)null)]
+                    [
+                        Sql.ArgNullable(":label", (string?)"has-value"),
+                        Sql.ArgNullable(":ref", (Guid?)null),
+                    ]
                 ),
                 ($"SELECT label, ref_id FROM {tableName}", null),
             ];
